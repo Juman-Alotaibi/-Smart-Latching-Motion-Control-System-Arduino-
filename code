@@ -1,0 +1,44 @@
+const int buttonPin = 2;       // زر التشغيل
+const int sensorPin = 3;       // حساس الحركة (مثل PIR)
+const int latchPin = 5;        // يتحكم بالترانزستور
+const int indicatorLED = 13;   // مؤشر التشغيل
+
+unsigned long lastDetectedTime = 0;
+const unsigned long timeout = 30000; // 30 ثانية بدون كشف = إيقاف النظام
+
+bool systemOn = false;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);   // زر التشغيل
+  pinMode(sensorPin, INPUT);          // الحساس
+  pinMode(latchPin, OUTPUT);          // الترانزستور أو الحمل
+  pinMode(indicatorLED, OUTPUT);      // LED المؤشر
+
+  digitalWrite(latchPin, LOW);        // يبدأ النظام مطفي
+  digitalWrite(indicatorLED, LOW);
+}
+
+void loop() {
+  // التحقق من الضغط على الزر
+  if (digitalRead(buttonPin) == LOW && !systemOn) {
+    systemOn = true;
+    digitalWrite(latchPin, HIGH);     // تشغيل الترانزستور
+    digitalWrite(indicatorLED, HIGH); // تشغيل المؤشر
+    lastDetectedTime = millis();      // بداية العد
+    delay(300); // لمنع التكرار
+  }
+
+  // إذا النظام شغال
+  if (systemOn) {
+    if (digitalRead(sensorPin) == HIGH) {
+      lastDetectedTime = millis(); // تم الكشف
+    }
+
+    // إذا مضى وقت بدون كشف
+    if (millis() - lastDetectedTime > timeout) {
+      digitalWrite(latchPin, LOW);     // إيقاف الترانزستور
+      digitalWrite(indicatorLED, LOW); // إيقاف المؤشر
+      systemOn = false;
+    }
+  }
+}
